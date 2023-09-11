@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { AddContactForm } from './AddContactForm/AddContactForm';
 import { ContactList } from './ContactList/ContactList';
 import { Filter } from './Filter/Filter';
@@ -6,33 +6,29 @@ import { nanoid } from 'nanoid';
 import { MainContainer, SubTitle, Title } from './App.styled';
 import { GlobalStyle } from './GlobalStyles';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState([
+    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ]);
 
-  componentDidMount() {
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
     const savedContacts = localStorage.getItem('contacts');
     if (savedContacts !== null) {
-      this.setState({
-        contacts: JSON.parse(savedContacts),
-      });
+      setContacts(JSON.parse(savedContacts));
     }
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts)
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-  }
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-  addContact = newContact => {
-    const isInContacts = this.state.contacts.some(
+  const addContact = newContact => {
+    const isInContacts = contacts.some(
       ({ name }) => name.toLowerCase() === newContact.name.toLowerCase()
     );
 
@@ -40,31 +36,27 @@ export class App extends Component {
       alert(`${newContact.name} is already in contacts`);
       return;
     }
-    this.setState(prevState => ({
-      contacts: [
-        ...prevState.contacts,
-        {
-          id: nanoid(),
-          ...newContact,
-        },
-      ],
-    }));
+
+    setContacts(prevContacts => [
+      ...prevContacts,
+      {
+        id: nanoid(),
+        ...newContact,
+      },
+    ]);
   };
 
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(
-        newContact => newContact.id !== contactId
-      ),
-    }));
+  const deleteContact = contactId => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== contactId)
+    );
   };
 
-  handleFilterChange = evt => {
-    this.setState({ filter: evt.target.value });
+  const handleFilterChange = evt => {
+    setFilter(evt.target.value);
   };
 
-  getFilteredContacts = () => {
-    const { contacts, filter } = this.state;
+  const getFilteredContacts = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
@@ -72,20 +64,16 @@ export class App extends Component {
     );
   };
 
-  render() {
-    const filteredContacts = this.getFilteredContacts();
-    return (
-      <MainContainer>
-        <Title>Phonebook</Title>
-        <AddContactForm onAdd={this.addContact} />
-        <SubTitle>Contacts</SubTitle>
-        <Filter value={this.state.filter} onChange={this.handleFilterChange} />
-        <ContactList
-          contacts={filteredContacts}
-          onDelete={this.deleteContact}
-        />
-        <GlobalStyle />
-      </MainContainer>
-    );
-  }
-}
+  const filteredContacts = getFilteredContacts();
+
+  return (
+    <MainContainer>
+      <Title>Phonebook</Title>
+      <AddContactForm onAdd={addContact} />
+      <SubTitle>Contacts</SubTitle>
+      <Filter value={filter} onChange={handleFilterChange} />
+      <ContactList contacts={filteredContacts} onDelete={deleteContact} />
+      <GlobalStyle />
+    </MainContainer>
+  );
+};
